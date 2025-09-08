@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>KPL Train Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { width: 100%; height: 100%; }
+    .train-marker {
+      background: #0078d7;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      border: 2px solid white;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map("map").setView([-41.2, 174.8], 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+
+    let trainMarkers = {};
+
+    async function loadRoute() {
+      try {
+        const res = await fetch("/api/route/kpl");
+        const data = await res.json();
+        if (data.route && data.route.length > 0) {
+          const latlngs = data.route.map(([lat, lng]) => [lat, lng]);
+          L.polyline(latlngs, { color: "red", weight: 3 }).addTo(map);
+          map.fitBounds(latlngs);
+        }
+      } catch (err) {
+        console.error("Error loading route:", err);
+      }
+    }
+
+    async function loadTrains() {
+      try {
+        const res = await fetch("/api/vehicles/kpl");
+        const data = await res.json();
+        if (data.vehicles) {
+          data.vehicles.forEach(v => {
+            if (!v.lat || !v.lng) return;
+            const latlng = [v.lat, v.lng];
+            if (trainMarkers[v.id]) {
+              trainMarkers[v.id].setLatLng(latlng);
+            } else {
+              trainMarkers[v.id] = L.marker(latlng, {
+                icon: L.divIcon({ className: "train-marker" })
+              }).addTo(map).bindPopup(`Train ${v.id}`);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error loading trains:", err);
+      }
+    }
+
+    loadRoute();
+    loadTrains();
+    setInterval(loadTrains, 15000);
+  </script>
+</body>
+</html>
