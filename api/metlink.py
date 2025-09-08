@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = os.environ.get("METLINK_API_KEY", "zV7BfC6K6i66viZiQhgoe4PNhFQD4geJ4lLZ9jNT")
+API_KEY = os.environ.get("METLINK_API_KEY", "blerg")
 BASE_URL = "https://api.opendata.metlink.org.nz/v1/gtfs"
 
 async def fetch_json(endpoint: str):
